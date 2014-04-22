@@ -23,15 +23,15 @@ import org.apache.commons.codec.binary.Base64;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.jexbox.connector.http.JexboxConnectorHttpImpl;
+import com.jexbox.connector.http.JexboxConnectorHttp;
 import com.sun.faces.facelets.util.DevTools;
 
 public class JexboxExceptionHandler extends ExceptionHandlerWrapper {
     private static final Logger _logger = Logger.getLogger(JexboxExceptionHandler.class.getCanonicalName());
     private ExceptionHandler _wrapped;
-	private JexboxConnectorHttpImpl _jexbox;
+	private JexboxConnectorHttp _jexbox;
 
-    public JexboxExceptionHandler(JexboxConnectorHttpImpl jexbox, ExceptionHandler exception) {
+    public JexboxExceptionHandler(JexboxConnectorHttp jexbox, ExceptionHandler exception) {
         _wrapped = exception;
         _jexbox = jexbox;
     }
