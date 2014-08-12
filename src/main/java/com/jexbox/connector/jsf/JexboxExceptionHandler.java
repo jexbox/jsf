@@ -43,34 +43,24 @@ public class JexboxExceptionHandler extends ExceptionHandlerWrapper {
  
     @Override
     public void handle() throws FacesException {
-        Iterator<ExceptionQueuedEvent> i = getUnhandledExceptionQueuedEvents().iterator();
+    	java.lang.Iterable<ExceptionQueuedEvent> events = getUnhandledExceptionQueuedEvents();
+        Iterator<ExceptionQueuedEvent> i = events.iterator();
         while (i.hasNext()) {
             ExceptionQueuedEvent event = i.next();
             try {
                 ExceptionQueuedEventContext eqec = (ExceptionQueuedEventContext) event.getSource();
                 Throwable t = eqec.getException();
                 if(t == null) continue;
-        		Throwable filtered = getRootCause(t);
-                
-                FacesContext fc = FacesContext.getCurrentInstance();
-                ExternalContext ec = fc.getExternalContext();
-                
-                String pageTrace = getPageStack(fc);
-        		Map<String, String> meta = new HashMap<String, String>();
-        		String pageTrace64 = Base64.encodeBase64String(pageTrace.getBytes());
-        		meta.put("data", pageTrace64);
-        		Map<String, Map<String, String>> meta2 = new HashMap<String, Map<String, String>>();
-        		meta2.put("Page Trace", meta);
 
-                Object request = ec.getRequest();
-                if(request instanceof HttpServletRequest){
-            		_jexbox.sendWithMeta(filtered, (HttpServletRequest)request, meta2);
-                }else{
-                    JsonObject json = _jexbox.json(filtered, meta2);
-        			addExternalContextMetaData(ec, json);
-        			addSessionMetaData(ec, json);
-        			_jexbox.sendJson(json);
+                FacesContext fc = FacesContext.getCurrentInstance();
+
+                String pageTrace = null;
+        		Boolean noPageTrace = (Boolean) eqec.getAttributes().get("no_page_trace");
+                if(noPageTrace == null || noPageTrace.booleanValue() == false){
+                    pageTrace = getPageStack(fc);
                 }
+
+            	handle(fc, t, pageTrace);
             }catch(Throwable e){
             	_logger.log(Level.SEVERE, e.getMessage(), e);
             }
@@ -79,7 +69,41 @@ public class JexboxExceptionHandler extends ExceptionHandlerWrapper {
         getWrapped().handle();
     }
     
-	protected void addSessionMetaData(ExternalContext ec, JsonObject json){
+    
+    public void handle(FacesContext fc, Throwable t){
+        try {
+        	handle(fc, t, null);
+        }catch(Throwable e){
+        	_logger.log(Level.SEVERE, e.getMessage(), e);
+        }
+    }
+    
+    private void handle(FacesContext fc, Throwable t, String pageTrace){
+		Throwable filtered = getRootCause(t);
+        
+        ExternalContext ec = fc.getExternalContext();
+        
+		Map<String, Map<String, String>> meta2 = new HashMap<String, Map<String, String>>();
+
+        if(pageTrace != null && pageTrace.length() > 0){
+    		Map<String, String> meta = new HashMap<String, String>();
+    		String pageTrace64 = Base64.encodeBase64String(pageTrace.getBytes());
+    		meta.put("data", pageTrace64);
+    		meta2.put("Page Trace", meta);
+        }
+		
+        Object request = ec.getRequest();
+        if(request instanceof HttpServletRequest){
+    		_jexbox.sendWithMeta(filtered, (HttpServletRequest)request, meta2);
+        }else{
+            JsonObject json = _jexbox.json(filtered, meta2);
+			addExternalContextMetaData(ec, json);
+			addSessionMetaData(ec, json);
+			_jexbox.sendJson(json);
+        }
+    }
+	
+    protected void addSessionMetaData(ExternalContext ec, JsonObject json){
 		JsonObject meta = json.getAsJsonObject("meta");
 		if(meta == null){
 			meta = new JsonObject();
