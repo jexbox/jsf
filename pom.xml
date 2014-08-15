@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.jexbox.connector</groupId>
   <artifactId>jexbox-jsf</artifactId>
-  <version>0.0.2-SNAPSHOT</version>
+  <version>0.0.3-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Jexbox JSF Connector</name>
   <description>Jexbox JSF connector hooks into ExceptionHandlerWrapper, so any uncaught exceptions in your JSF application will be sent to your Jexbox database. The connector extracts complete exception stack trace, including nested exceptions, error message and system properties and page/component traces</description>
